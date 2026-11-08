@@ -31,5 +31,33 @@ CREATE TABLE IF NOT EXISTS vehicle (
     CONSTRAINT chk_fueltype_enum CHECK (fuel_type IS NULL OR fuel_type IN ('GASOLINE','KEROSENE','ELECTRICITY','NUCLEAR','ANTIMATTER'))
 );
 
+ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS idx_vehicle_name ON vehicle (name);
 CREATE INDEX IF NOT EXISTS idx_vehicle_coordinates ON vehicle (coordinates_id);
+
+CREATE TABLE IF NOT EXISTS app_user (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    username       VARCHAR(100) NOT NULL,
+    password_hash  VARCHAR(100) NOT NULL,
+    role           VARCHAR(20) NOT NULL,
+    CONSTRAINT uk_app_user_username UNIQUE (username),
+    CONSTRAINT chk_app_user_role CHECK (role IN ('USER', 'ADMIN'))
+);
+
+CREATE TABLE IF NOT EXISTS import_operation (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id        BIGINT NOT NULL REFERENCES app_user(id),
+    status         VARCHAR(20) NOT NULL,
+    file_name      VARCHAR(500),
+    added_count    INTEGER,
+    total_rows     INTEGER,
+    error_message  VARCHAR(4000),
+    created_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    completed_at   TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT chk_import_status CHECK (status IN ('RUNNING', 'SUCCESS', 'FAILED')),
+    CONSTRAINT chk_import_added_count CHECK (added_count IS NULL OR added_count >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_import_operation_user ON import_operation (user_id);
+CREATE INDEX IF NOT EXISTS idx_import_operation_created ON import_operation (created_at);

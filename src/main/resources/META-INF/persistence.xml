@@ -9,6 +9,8 @@
         <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
         <class>ru.itmo.vehicle.domain.Vehicle</class>
         <class>ru.itmo.vehicle.domain.Coordinates</class>
+        <class>ru.itmo.vehicle.domain.AppUser</class>
+        <class>ru.itmo.vehicle.domain.ImportOperation</class>
         <class>ru.itmo.vehicle.domain.ZonedDateTimeConverter</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
