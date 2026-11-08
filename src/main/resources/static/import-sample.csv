@@ -1,0 +1,4 @@
+name;coordinates.x;coordinates.y;type;enginePower;numberOfWheels;capacity;distanceTravelled;fuelConsumption;fuelType
+Импорт-Квадрокоптер;12.5;7;DRONE;15.5;4;2;120.0;3.5;ELECTRICITY
+Импорт-Катер;40.0;12;BOAT;220;;8;5400.5;18.2;GASOLINE
+Импорт-Велосипед;86.25;-15;BICYCLE;0.5;2;1;350.0;0.1;

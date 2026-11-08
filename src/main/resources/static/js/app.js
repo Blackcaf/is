@@ -27,6 +27,8 @@ const COLUMNS = [
     { key: "fuelType", title: "Топливо" }
 ];
 
+let currentUser = null;
+
 const state = {
     page: 1,
     size: 8,
@@ -51,14 +53,26 @@ function esc(s) {
 }
 
 async function apiFetch(path, options = {}) {
-    const resp = await fetch(`${API}${path}`, {
-        headers: { "Content-Type": "application/json" },
-        ...options
-    });
+    const opts = { ...options };
+    opts.headers = { ...(options.headers || {}) };
+    if (!(opts.body instanceof FormData)) {
+        opts.headers["Content-Type"] = "application/json";
+    }
+    const resp = await fetch(`${API}${path}`, opts);
     let body = null;
-    try { body = await resp.json(); } catch (e) { body = null; }
+    const contentType = resp.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+        try { body = await resp.json(); } catch (e) { body = null; }
+    }
+    if (resp.status === 401 && !path.startsWith("/auth/login")) {
+        currentUser = null;
+        if (sseSource) { sseSource.close(); sseSource = null; }
+        renderLoginPage();
+    }
     if (!resp.ok) {
-        const err = new Error(body?.error || "Ошибка сервера (" + resp.status + ")");
+        const message = body?.errors?.general || body?.error || body?.errors?.[Object.keys(body?.errors || {})[0]]
+            || "Ошибка сервера (" + resp.status + ")";
+        const err = new Error(message);
         err.status = resp.status;
         err.body = body;
         throw err;
@@ -76,9 +90,88 @@ function toast(msg) {
     toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
 }
 
+function updateUserBox() {
+    const box = document.getElementById("user-box");
+    if (!box) return;
+    if (!currentUser) { box.innerHTML = ""; return; }
+    const role = currentUser.role === "ADMIN" ? "администратор" : "пользователь";
+    box.innerHTML = `<span>${esc(currentUser.username)}</span>
+        <span class="role">${role}</span>
+        <button class="btn small secondary" id="logout-btn">Выйти</button>`;
+    box.querySelector("#logout-btn").onclick = async () => {
+        try { await apiFetch("/auth/logout", { method: "POST" }); } catch (e) { }
+        currentUser = null;
+        if (sseSource) { sseSource.close(); sseSource = null; }
+        updateUserBox();
+        renderLoginPage();
+    };
+}
+
+function renderLoginPage() {
+    if (sseSource) { sseSource.close(); sseSource = null; }
+    updateUserBox();
+    const app = document.getElementById("app");
+    app.innerHTML = `<div class="login-wrap">
+        <div class="panel">
+            <h2 style="margin-top:0">Вход в систему</h2>
+            <p style="color:#718096;font-size:14px">Для работы с системой необходима авторизация.
+                Тестовые учётные записи: <b>admin/admin</b> (администратор), <b>user/user</b> (пользователь).</p>
+            <form id="login-form" novalidate>
+                <div class="field" style="margin-bottom:14px">
+                    <label>Имя пользователя</label>
+                    <input type="text" name="username" autocomplete="username" autofocus>
+                </div>
+                <div class="field" style="margin-bottom:14px">
+                    <label>Пароль</label>
+                    <input type="password" name="password" autocomplete="current-password">
+                </div>
+                <div class="result-box error" id="login-error" style="display:none"></div>
+                <button class="btn" type="submit" style="width:100%;margin-top:12px">Войти</button>
+            </form>
+        </div>
+    </div>`;
+    const form = document.getElementById("login-form");
+    form.onsubmit = async ev => {
+        ev.preventDefault();
+        const username = form.querySelector('[name="username"]').value.trim();
+        const password = form.querySelector('[name="password"]').value;
+        const errorBox = document.getElementById("login-error");
+        errorBox.style.display = "none";
+        try {
+            currentUser = await apiFetch("/auth/login", {
+                method: "POST",
+                body: JSON.stringify({ username, password })
+            });
+            updateUserBox();
+            connectSse();
+            if (!location.hash || location.hash === "#/login") location.hash = "#/";
+            else router();
+        } catch (e) {
+            errorBox.textContent = e.message;
+            errorBox.style.display = "block";
+        }
+    };
+}
+
+async function initApp() {
+    try {
+        currentUser = await apiFetch("/auth/me");
+        updateUserBox();
+        router();
+        connectSse();
+    } catch (e) {
+        if (e.status !== 401) {
+            toast("Не удалось проверить авторизацию: " + e.message);
+            renderLoginPage();
+        }
+    }
+}
+
 const routes = {
     "/": renderListPage,
     "/new": () => { openVehicleForm(null, "Создание объекта"); location.hash = "#/"; },
+    "/import": renderImportPage,
+    "/history": renderHistoryPage,
     "/special": renderSpecialPage,
     "/view/:id": (params) => renderDetailPage(Number(params.id))
 };
@@ -185,7 +278,7 @@ function drawGrid() {
         const arrow = state.sortField === c.key ? (state.asc ? " ▲" : " ▼") : "";
         return `<th data-key="${c.key}">${esc(c.title)}<span class="arrow">${arrow}</span></th>`;
     }).join("")}<th>Действия</th></tr>`;
-    const rows = state.items.map(v => `<tr data-id="${v.id}">${
+    const rows = state.items.map(v => `<tr data-id="${v.id}" data-version="${esc(v.version ?? "")}">${
         COLUMNS.map(c => {
             let val;
             if (c.key === "coordX") val = v.coordinates?.x;
@@ -211,7 +304,7 @@ function drawGrid() {
         const id = Number(tr.dataset.id);
         tr.querySelector(".act-view").onclick = () => location.hash = `#/view/${id}`;
         tr.querySelector(".act-edit").onclick = () => openVehicleForm(id, "Обновление объекта");
-        tr.querySelector(".act-del").onclick = () => confirmDelete(id);
+        tr.querySelector(".act-del").onclick = () => confirmDelete(id, tr.dataset.version);
     });
 }
 
@@ -353,6 +446,7 @@ async function openVehicleForm(id, title) {
     let coordinates = [];
     try { coordinates = await apiFetch("/coordinates"); }
     catch (e) { toast("Не удалось загрузить список Coordinates: " + e.message); }
+    const originalVersion = v.version ?? null;
     const backdrop = document.getElementById("modal-backdrop");
     document.getElementById("modal-title").textContent = title;
     const body = document.getElementById("modal-body");
@@ -371,6 +465,7 @@ async function openVehicleForm(id, title) {
         if (Object.keys(errors).length) { showFieldErrors(form, errors); return; }
         showFieldErrors(form, {});
         const payload = collectPayload(form);
+        if (id != null) payload.version = originalVersion;
         try {
             if (id == null) {
                 await apiFetch("/vehicles", { method: "POST", body: JSON.stringify(payload) });
@@ -431,19 +526,145 @@ async function renderDetailPage(id) {
             </div>
         </div>`;
     document.getElementById("d-edit").onclick = () => openVehicleForm(id, "Обновление объекта");
-    document.getElementById("d-del").onclick = () => confirmDelete(id);
+    document.getElementById("d-del").onclick = () => confirmDelete(id, v.version);
 }
 
-async function confirmDelete(id) {
+async function confirmDelete(id, version) {
     if (!confirm(`Удалить транспортное средство №${id}?`)) return;
     try {
-        await apiFetch(`/vehicles/${id}`, { method: "DELETE" });
+        const query = version !== undefined && version !== null && version !== ""
+            ? `?version=${encodeURIComponent(version)}` : "";
+        await apiFetch(`/vehicles/${id}${query}`, { method: "DELETE" });
         toast("Объект удалён");
         if (location.hash.startsWith("#/view/")) location.hash = "#/";
         else refreshTable();
     } catch (e) {
         toast(e.message);
     }
+}
+
+let historyPage = 1;
+
+async function renderImportPage() {
+    const app = document.getElementById("app");
+    app.innerHTML = `<h2 class="page-title">Массовый импорт объектов</h2>
+        <div class="panel">
+            <p>Загрузите CSV-файл (UTF-8). Разделитель — <b>;</b> или <b>,</b>, первая строка — заголовок.
+               Значения вложенного объекта <b>Coordinates</b> задаются в той же строке полями
+               <b>coordinates.x</b> и <b>coordinates.y</b>.</p>
+            <p style="font-size:13px;color:#718096">Обязательные колонки:
+                <code>name</code>, <code>coordinates.x</code>, <code>coordinates.y</code>,
+                <code>enginePower</code>, <code>capacity</code>, <code>distanceTravelled</code>,
+                <code>fuelConsumption</code>. Необязательные:
+                <code>type</code>, <code>numberOfWheels</code>, <code>fuelType</code>.
+                <a href="import-sample.csv" download>Скачать пример файла</a>.</p>
+            <p style="font-size:13px;color:#a52f2f">Импорт выполняется одной транзакцией: при любой ошибке
+                не создаётся ни один объект.</p>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:18px">
+                <input type="file" id="import-file" accept=".csv,text/csv">
+                <button class="btn" id="import-btn">Загрузить и импортировать</button>
+            </div>
+            <div class="result-box" id="import-result" style="display:none"></div>
+        </div>`;
+
+    const fileInput = document.getElementById("import-file");
+    const button = document.getElementById("import-btn");
+    const result = document.getElementById("import-result");
+
+    const showResult = (html, isError) => {
+        result.style.display = "block";
+        result.classList.toggle("error", !!isError);
+        result.innerHTML = html;
+    };
+
+    button.onclick = async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) { showResult("Выберите CSV-файл", true); return; }
+        const formData = new FormData();
+        formData.append("file", file);
+        button.disabled = true;
+        button.textContent = "Импорт…";
+        showResult("Выполняется импорт…", false);
+        try {
+            const r = await apiFetch("/imports", { method: "POST", body: formData });
+            showResult(`Импорт завершён успешно. Операция <b>#${r.operationId}</b>,
+                добавлено объектов: <b>${r.addedCount}</b>.
+                <a href="#/history">Открыть историю импорта</a>`, false);
+            if (location.hash === "#/") refreshTable();
+        } catch (e) {
+            const errors = e.body?.errors || { general: e.message };
+            const items = Object.entries(errors)
+                .map(([field, message]) => `<li><b>${esc(field)}</b>: ${esc(message)}</li>`)
+                .join("");
+            const operation = e.body?.operationId
+                ? `<p>Операция <b>#${e.body.operationId}</b> сохранена в истории со статусом
+                   <b>FAILED</b>. Объекты не добавлены.</p>` : "";
+            showResult(`${operation}<p>Импорт не выполнен:</p><ul class="import-errors">${items}</ul>`, true);
+        } finally {
+            button.disabled = false;
+            button.textContent = "Загрузить и импортировать";
+        }
+    };
+}
+
+async function renderHistoryPage() {
+    const app = document.getElementById("app");
+    const adminNote = currentUser?.role === "ADMIN"
+        ? "Администратор видит операции всех пользователей."
+        : "Показаны только операции импорта, запущенные вами.";
+    app.innerHTML = `<h2 class="page-title">История импорта</h2>
+        <div class="panel">
+            <div class="toolbar">
+                <span style="color:#718096;font-size:13px">${esc(adminNote)}</span>
+                <span style="flex:1"></span>
+                <button class="btn small secondary" id="history-refresh">Обновить</button>
+            </div>
+            <div class="table-wrap"><table class="grid" id="history-grid"></table></div>
+            <div class="pagination" id="history-pagination"></div>
+        </div>`;
+    document.getElementById("history-refresh").onclick = () => loadHistory(historyPage);
+    await loadHistory(historyPage);
+}
+
+async function loadHistory(page) {
+    const grid = document.getElementById("history-grid");
+    if (!grid) return;
+    let data;
+    try {
+        data = await apiFetch(`/imports?page=${page}&size=20`);
+    } catch (e) {
+        grid.innerHTML = `<tbody><tr><td style="color:#a52f2f">Не удалось загрузить историю: ${esc(e.message)}</td></tr></tbody>`;
+        return;
+    }
+    historyPage = page;
+    const items = data.items || [];
+    const statusText = { RUNNING: "выполняется", SUCCESS: "успешно", FAILED: "ошибка" };
+    grid.innerHTML = `<thead><tr>
+            <th>ID операции</th><th>Статус</th><th>Пользователь</th>
+            <th>Добавлено объектов</th><th>Файл</th><th>Начата</th><th>Завершена</th><th>Ошибка</th>
+        </tr></thead><tbody>${items.length ? items.map(op => `<tr>
+            <td>${op.id}</td>
+            <td><span class="status-badge status-${esc(op.status)}">${esc(statusText[op.status] || op.status)}</span></td>
+            <td>${esc(op.username)}</td>
+            <td>${op.status === "SUCCESS" && op.addedCount != null ? op.addedCount : "—"}</td>
+            <td>${esc(op.fileName || "—")}</td>
+            <td>${esc(op.createdAt || "—")}</td>
+            <td>${esc(op.completedAt || "—")}</td>
+            <td title="${esc(op.errorMessage || "")}">${
+                op.status === "FAILED" && op.errorMessage ? esc(op.errorMessage) : "—"}</td>
+        </tr>`).join("") : `<tr><td colspan="8" style="text-align:center;color:#718096">Операций импорта нет</td></tr>`}</tbody>`;
+
+    const pages = Math.max(1, Math.ceil(data.total / data.size));
+    const pagination = document.getElementById("history-pagination");
+    pagination.innerHTML = "";
+    pagination.append(
+        el(`<button class="btn small secondary" ${page <= 1 ? "disabled" : ""}>← Пред.</button>`),
+        el(`<span class="page-info">Страница ${page} из ${pages} (всего: ${data.total})</span>`),
+        el(`<button class="btn small secondary" ${page >= pages ? "disabled" : ""}>След. →</button>`)
+    );
+    const buttons = pagination.querySelectorAll("button");
+    buttons[0].onclick = () => loadHistory(page - 1);
+    buttons[1].onclick = () => loadHistory(page + 1);
 }
 
 async function renderSpecialPage() {
@@ -563,6 +784,7 @@ async function renderSpecialPage() {
 
 let sseSource = null;
 function connectSse() {
+    if (!currentUser) return;
     if (sseSource) sseSource.close();
     sseSource = new EventSource(`${API}/vehicles/events`);
     const handler = name => e => {
@@ -585,7 +807,4 @@ function connectSse() {
 }
 
 window.App = { closeModal };
-document.addEventListener("DOMContentLoaded", () => {
-    router();
-    connectSse();
-});
+document.addEventListener("DOMContentLoaded", initApp);
