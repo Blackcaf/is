@@ -93,6 +93,7 @@ function toast(msg) {
 function updateUserBox() {
     const box = document.getElementById("user-box");
     if (!box) return;
+    document.querySelector(".topbar")?.classList.toggle("hidden", !currentUser);
     if (!currentUser) { box.innerHTML = ""; return; }
     const role = currentUser.role === "ADMIN" ? "администратор" : "пользователь";
     box.innerHTML = `<span>${esc(currentUser.username)}</span>
@@ -113,9 +114,7 @@ function renderLoginPage() {
     const app = document.getElementById("app");
     app.innerHTML = `<div class="login-wrap">
         <div class="panel">
-            <h2 style="margin-top:0">Вход в систему</h2>
-            <p style="color:#718096;font-size:14px">Для работы с системой необходима авторизация.
-                Тестовые учётные записи: <b>admin/admin</b> (администратор), <b>user/user</b> (пользователь).</p>
+            <h2>Вход в систему</h2>
             <form id="login-form" novalidate>
                 <div class="field" style="margin-bottom:14px">
                     <label>Имя пользователя</label>
@@ -144,7 +143,7 @@ function renderLoginPage() {
             });
             updateUserBox();
             connectSse();
-            if (!location.hash || location.hash === "#/login") location.hash = "#/";
+            if (location.hash !== "#/") location.hash = "#/";
             else router();
         } catch (e) {
             errorBox.textContent = e.message;
@@ -162,14 +161,13 @@ async function initApp() {
     } catch (e) {
         if (e.status !== 401) {
             toast("Не удалось проверить авторизацию: " + e.message);
-            renderLoginPage();
         }
+        renderLoginPage();
     }
 }
 
 const routes = {
     "/": renderListPage,
-    "/new": () => { openVehicleForm(null, "Создание объекта"); location.hash = "#/"; },
     "/import": renderImportPage,
     "/history": renderHistoryPage,
     "/special": renderSpecialPage,
@@ -177,6 +175,10 @@ const routes = {
 };
 
 function router() {
+    if (!currentUser) {
+        renderLoginPage();
+        return;
+    }
     const hash = location.hash.replace(/^#/, "") || "/";
     document.querySelectorAll(".menu-link").forEach(a =>
         a.classList.toggle("active", a.getAttribute("href") === "#" + hash));
