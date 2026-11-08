@@ -11,7 +11,6 @@ import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "vehicle",
-        uniqueConstraints = @UniqueConstraint(columnNames = "id"),
         indexes = @Index(name = "idx_vehicle_name", columnList = "name"))
 public class Vehicle {
 
@@ -64,6 +63,10 @@ public class Vehicle {
     @Enumerated(EnumType.STRING)
     @Column(name = "fuel_type", length = 20)
     private FuelType fuelType;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     public Vehicle() {
     }
@@ -179,6 +182,14 @@ public class Vehicle {
 
     public void setFuelType(FuelType fuelType) {
         this.fuelType = fuelType;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 
     @Override
