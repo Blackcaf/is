@@ -4,27 +4,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import ru.itmo.vehicle.domain.Vehicle;
-import ru.itmo.vehicle.service.VehicleEventBus;
 import ru.itmo.vehicle.service.VehicleService;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @RestController
 @RequestMapping("/api/vehicles")
 public class VehicleController {
     private final VehicleService service;
-    private final VehicleMapper mapper;
-    private final VehicleEventBus eventBus;
-    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+    private final WebMapper mapper;
+    private final VehicleEventStream eventStream;
 
-    public VehicleController(VehicleService service, VehicleMapper mapper, VehicleEventBus eventBus) {
+    public VehicleController(VehicleService service, WebMapper mapper, VehicleEventStream eventStream) {
         this.service = service;
         this.mapper = mapper;
-        this.eventBus = eventBus;
+        this.eventStream = eventStream;
     }
 
     @PostMapping
@@ -44,8 +39,9 @@ public class VehicleController {
     }
 
     @DeleteMapping("/{id}")
-    public Map<String, Long> delete(@PathVariable Long id) {
-        service.delete(id);
+    public Map<String, Long> delete(@PathVariable Long id,
+                                    @RequestParam(required = false) Long version) {
+        service.delete(id, version);
         return Map.of("deleted", id);
     }
 
@@ -63,29 +59,6 @@ public class VehicleController {
 
     @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter events() {
-        SseEmitter emitter = new SseEmitter(0L);
-        VehicleEventBus.Listener listener = (action, vehicle) -> sendEvent(emitter, action, vehicle);
-        Runnable cleanup = () -> { emitters.remove(emitter); eventBus.unsubscribe(listener); };
-        emitter.onCompletion(cleanup);
-        emitter.onTimeout(cleanup);
-        emitter.onError(error -> cleanup.run());
-        emitters.add(emitter);
-        eventBus.subscribe(listener);
-        try {
-            emitter.send(SseEmitter.event().comment("connected"));
-        } catch (IOException | IllegalStateException exception) {
-            cleanup.run();
-            emitter.completeWithError(exception);
-        }
-        return emitter;
-    }
-
-    private void sendEvent(SseEmitter emitter, VehicleEventBus.Action action, Vehicle vehicle) {
-        try {
-            emitter.send(SseEmitter.event().name(action.name().toLowerCase())
-                    .data(Map.of("vehicle", mapper.toDto(vehicle))));
-        } catch (IOException | IllegalStateException exception) {
-            emitter.completeWithError(exception);
-        }
+        return eventStream.subscribe();
     }
 }

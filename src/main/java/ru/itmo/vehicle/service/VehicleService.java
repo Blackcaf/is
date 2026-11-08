@@ -1,7 +1,7 @@
 package ru.itmo.vehicle.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -11,6 +11,7 @@ import ru.itmo.vehicle.domain.Vehicle;
 import ru.itmo.vehicle.domain.VehicleType;
 import ru.itmo.vehicle.repo.VehicleRepository;
 import ru.itmo.vehicle.repo.CoordinatesRepository;
+import ru.itmo.vehicle.exception.ConflictException;
 import ru.itmo.vehicle.exception.ResourceNotFoundException;
 import ru.itmo.vehicle.exception.ValidationException;
 
@@ -39,48 +40,75 @@ public class VehicleService {
         this.eventBus = eventBus;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Vehicle create(Vehicle vehicle) {
+        normalize(vehicle);
         validate(vehicle);
+        ensureNameUnique(vehicle.getName(), null);
         resolveCoordinates(vehicle);
         vehicle.setId(null);
         vehicle.setCreationDate(null);
+        vehicle.setVersion(null);
         Vehicle saved = repository.save(vehicle);
+        repository.flush();
         publishAfterCommit(VehicleEventBus.Action.CREATED, saved);
         return saved;
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public Vehicle getRequired(Long id) {
         return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Vehicle with id=" + id + " not found"));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public Optional<Vehicle> getById(Long id) {
         return repository.findById(id);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Vehicle update(Long id, Vehicle changes) {
         Vehicle existing = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Транспортное средство с id=" + id + " не найдено"));
+        if (changes.getVersion() != null && !changes.getVersion().equals(existing.getVersion())) {
+            throw new ConflictException(Map.of("general",
+                    "Объект уже изменён другим пользователем. Обновите данные и повторите редактирование."));
+        }
+        normalize(changes);
         changes.setId(existing.getId());
+        changes.setVersion(existing.getVersion());
         changes.setCreationDate(existing.getCreationDate());
         validate(changes);
+        ensureNameUnique(changes.getName(), id);
         resolveCoordinates(changes);
         Vehicle saved = repository.save(changes);
+        repository.flush();
         publishAfterCommit(VehicleEventBus.Action.UPDATED, saved);
         return saved;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void delete(Long id) {
+        deleteInternal(id, null);
+    }
+
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public void delete(Long id, Long expectedVersion) {
+        deleteInternal(id, expectedVersion);
+    }
+
+    private void deleteInternal(Long id, Long expectedVersion) {
         Vehicle v = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Транспортное средство с id=" + id + " не найдено"));
+        if (expectedVersion != null && !expectedVersion.equals(v.getVersion())) {
+            throw new ConflictException(Map.of("general",
+                    "Объект уже изменён другим пользователем. Удаление отменено."));
+        }
         repository.deleteById(id);
+        repository.flush();
         publishAfterCommit(VehicleEventBus.Action.DELETED, v);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<Vehicle> page(String filterField, String filterValue, String sortField, boolean asc,
                               int page, int size) {
         int p = Math.max(page, 1);
@@ -88,21 +116,22 @@ public class VehicleService {
         return repository.findPage(filterField, filterValue, sortField, asc, (p - 1) * s, s);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public long count(String filterField, String filterValue) {
         return repository.countFiltered(filterField, filterValue);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public double sumFuelConsumption() {
         return repository.sumFuelConsumption();
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public Vehicle minByTypeRequired() {
         return minByType().orElseThrow(() -> new ResourceNotFoundException("No vehicle with a non-null type was found"));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public Optional<Vehicle> minByType() {
         List<Vehicle> all = repository.findAll();
         Vehicle best = null;
@@ -115,15 +144,16 @@ public class VehicleService {
         return Optional.ofNullable(best);
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public long countFuelTypeGreaterThan(String fuelType) {
         try {
-            return countFuelTypeGreaterThan(FuelType.valueOf(fuelType.toUpperCase()));
+            return countFuelTypeGreaterThan(FuelType.valueOf(fuelType.toUpperCase(java.util.Locale.ROOT)));
         } catch (IllegalArgumentException | NullPointerException exception) {
             throw new ValidationException(Map.of("fuelType", "Invalid fuel type: " + fuelType));
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public long countFuelTypeGreaterThan(FuelType fuelType) {
         if (fuelType == null) {
             throw new ValidationException(Map.of("fuelType", "Не задан тип топлива для сравнения"));
@@ -137,15 +167,16 @@ public class VehicleService {
         return count;
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<Vehicle> findByType(String type) {
         try {
-            return findByType(VehicleType.valueOf(type.toUpperCase()));
+            return findByType(VehicleType.valueOf(type.toUpperCase(java.util.Locale.ROOT)));
         } catch (IllegalArgumentException | NullPointerException exception) {
             throw new ValidationException(Map.of("type", "Invalid vehicle type: " + type));
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<Vehicle> findByType(VehicleType type) {
         if (type == null) {
             throw new ValidationException(Map.of("type", "Не задан тип транспортного средства"));
@@ -153,7 +184,7 @@ public class VehicleService {
         return repository.findByType(type);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Vehicle addWheels(Long id, long wheelsToAdd) {
         if (wheelsToAdd <= 0) {
             throw new ValidationException(Map.of("wheelsToAdd", "Число добавляемых колёс должно быть больше 0"));
@@ -167,11 +198,8 @@ public class VehicleService {
         return saved;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteCoordinates(Long coordinatesId, Long replacementId) {
-        if (coordinatesRepository == null) {
-            throw new IllegalStateException("Репозиторий Coordinates не настроен");
-        }
         Coordinates oldCoordinates = coordinatesRepository.findById(coordinatesId)
                 .orElseThrow(() -> new ResourceNotFoundException("Coordinates с id=" + coordinatesId + " не найден"));
         Coordinates replacement = coordinatesRepository.findById(replacementId)
@@ -215,15 +243,36 @@ public class VehicleService {
         }
     }
 
+    private void normalize(Vehicle vehicle) {
+        if (vehicle.getName() != null && !vehicle.getName().isBlank()) {
+            vehicle.setName(vehicle.getName().trim());
+        }
+    }
+
+    private void ensureNameUnique(String name, Long excludeId) {
+        if (repository.existsByNameIgnoreCase(name, excludeId)) {
+            throw new ConflictException(Map.of("name",
+                    "Транспортное средство с названием «" + name + "» уже существует"));
+        }
+    }
+
     private void resolveCoordinates(Vehicle vehicle) {
         Coordinates coordinates = vehicle.getCoordinates();
-        if (coordinates == null || coordinates.getId() == null || coordinatesRepository == null) {
+        if (coordinates == null) {
             return;
         }
-        Coordinates existing = coordinatesRepository.findById(coordinates.getId())
-                .orElseThrow(() -> new ValidationException(
-                        Map.of("coordinates", "Выбранный объект Coordinates не найден")));
-        vehicle.setCoordinates(existing);
+        if (coordinates.getId() != null) {
+            Coordinates existing = coordinatesRepository.findById(coordinates.getId())
+                    .orElseThrow(() -> new ValidationException(
+                            Map.of("coordinates", "Выбранный объект Coordinates не найден")));
+            vehicle.setCoordinates(existing);
+            return;
+        }
+        if (coordinates.getX() == null) {
+            return;
+        }
+        coordinatesRepository.findByPair(coordinates.getX(), coordinates.getY())
+                .ifPresent(vehicle::setCoordinates);
     }
 
     private void publishAfterCommit(VehicleEventBus.Action action, Vehicle vehicle) {
@@ -256,6 +305,7 @@ public class VehicleService {
         c.setDistanceTravelled(src.getDistanceTravelled());
         c.setFuelConsumption(src.getFuelConsumption());
         c.setFuelType(src.getFuelType());
+        c.setVersion(src.getVersion());
         return c;
     }
 }

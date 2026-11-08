@@ -10,9 +10,9 @@ import java.util.Map;
 @RequestMapping("/api/special")
 public class SpecialOperationsController {
     private final VehicleService service;
-    private final VehicleMapper mapper;
+    private final WebMapper mapper;
 
-    public SpecialOperationsController(VehicleService service, VehicleMapper mapper) {
+    public SpecialOperationsController(VehicleService service, WebMapper mapper) {
         this.service = service;
         this.mapper = mapper;
     }
