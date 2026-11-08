@@ -24,9 +24,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class VehicleService {
+    private static final ReentrantLock NAME_UNIQUENESS_LOCK = new ReentrantLock(true);
+
     private final VehicleRepository repository;
     private final CoordinatesRepository coordinatesRepository;
     private final Validator validator;
@@ -42,17 +45,37 @@ public class VehicleService {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public Vehicle create(Vehicle vehicle) {
-        normalize(vehicle);
-        validate(vehicle);
-        ensureNameUnique(vehicle.getName(), null);
-        resolveCoordinates(vehicle);
-        vehicle.setId(null);
-        vehicle.setCreationDate(null);
-        vehicle.setVersion(null);
-        Vehicle saved = repository.save(vehicle);
-        repository.flush();
-        publishAfterCommit(VehicleEventBus.Action.CREATED, saved);
-        return saved;
+        NAME_UNIQUENESS_LOCK.lock();
+        registerNameLockRelease();
+        try {
+            normalize(vehicle);
+            validate(vehicle);
+            ensureNameUnique(vehicle.getName(), null);
+            resolveCoordinates(vehicle);
+            vehicle.setId(null);
+            vehicle.setCreationDate(null);
+            vehicle.setVersion(null);
+            Vehicle saved = repository.save(vehicle);
+            repository.flush();
+            publishAfterCommit(VehicleEventBus.Action.CREATED, saved);
+            return saved;
+        } catch (RuntimeException | Error e) {
+            if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+                NAME_UNIQUENESS_LOCK.unlock();
+            }
+            throw e;
+        }
+    }
+
+    private void registerNameLockRelease() {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    NAME_UNIQUENESS_LOCK.unlock();
+                }
+            });
+        }
     }
 
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)

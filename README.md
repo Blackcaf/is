@@ -189,7 +189,7 @@ mvn spring-boot:run
 
 База данных должна быть доступна по адресу из `app.database.url`.
 Интерфейс будет доступен по адресу `http://localhost:8080/`.
-При запуске WAR на WildFly контекстный путь равен имени файла: `http://localhost:8180/vehicle-is/`.
+При запуске WAR на WildFly контекстный путь равен имени файла. На Helios после SSH-туннеля URL: `http://localhost:25500/vehicle-is/`.
 
 ## База данных
 
@@ -262,39 +262,44 @@ export DB_PASSWORD="$(awk -F: '$4=="s434931" {print $5; exit}' ~/.pgpass)"
 
 export _JAVA_OPTIONS="-Xms64m -Xmx512m -XX:MaxMetaspaceSize=512m"
 
-bin/standalone.sh -c standalone-test.xml -Djboss.socket.binding.port-offset=100
+rm -rf standalone/tmp/vfs/deployment*
+bin/standalone.sh -c standalone-test.xml
 ```
 
 `JAVA_HOME` обязателен: без него WildFly может взять неподходящую версию Java.
 `_JAVA_OPTIONS` ограничивает память процесса, иначе контейнер может быть остановлен
 из-за превышения лимита.
 
-Смещение портов `100` означает:
+Конфигурация `standalone-test.xml` уже задаёт фиксированные порты:
 
-- HTTP: `8080 + 100 = 8180`
-- Management: `9990 + 100 = 10090`
+- HTTP: `25500`
+- HTTPS: `25501`
+- Management: `25502`
+
+Параметр `-Djboss.socket.binding.port-offset=100` использовать не нужно: он
+сдвигает эти порты и ломает приведённые ниже команды.
 
 ### 4. SSH-туннель
 
 На локальной машине:
 
 ```bash
-ssh -p 2222 -L 8180:127.0.0.1:8180 s434931@helios.cs.ifmo.ru
+ssh -p 2222 -L 25500:127.0.0.1:25500 s434931@helios.cs.ifmo.ru
 ```
 
 После этого приложение доступно по адресу:
 
 ```
-http://localhost:8180/vehicle-is/
+http://localhost:25500/vehicle-is/
 ```
 
 Spring Boot отдаёт `index.html` из `classpath:/static` как welcome-страницу,
 поэтому корневой URL сразу открывает интерфейс. REST API доступен по
-`http://localhost:8180/vehicle-is/api`.
+`http://localhost:25500/vehicle-is/api`.
 
 ### Остановка
 
-В консоли WildFly — `Ctrl+C`. Перед повторным запуском убедиться, что порт `8180`
+В консоли WildFly — `Ctrl+C`. Перед повторным запуском убедиться, что порт `25500`
 не занят предыдущим процессом.
 
 ## Веб-интерфейс
@@ -486,12 +491,12 @@ jmeter -n -t jmeter/vehicle-is-load-test.jmx \
 
 ```bash
 jmeter -n -t jmeter/vehicle-is-load-test.jmx \
-  -Jhost=localhost -Jport=8180 -Jcontext=/vehicle-is \
+  -Jhost=localhost -Jport=25500 -Jcontext=/vehicle-is \
   -l jmeter/results.jtl -e -o jmeter/report
 ```
 
 По умолчанию: `host=localhost`, `port=8080`, `context=` (локальный Spring Boot).
-Для WildFly: `-Jport=8180 -Jcontext=/vehicle-is`. Файл `admins.csv` содержит
+Для WildFly: `-Jport=25500 -Jcontext=/vehicle-is`. Файл `admins.csv` содержит
 `admin/admin` и `admin2/admin2`; для сценария нужны все четыре тестовых
 пользователя, создаваемые при первом запуске.
 
@@ -514,11 +519,10 @@ jmeter -n -t jmeter/vehicle-is-load-test.jmx \
 атомарным: ошибка в любой строке откатывает всю транзакцию, а запись истории
 сохраняется отдельно со статусом `FAILED`.
 
-> В среде разработки, где готовилась работа, PostgreSQL был недоступен,
-> поэтому сценарий JMeter ещё не прогонялся. Перед защитой его нужно выполнить
-> по инструкции выше и приложить отчёт `jmeter/report`. Если фактические коды
-> ответов отличатся от ожидаемых, корректируются обработчики конфликтов, а не
-> assertions сценария.
+Проверочный прогон выполняется в non-GUI режиме. Успешным считается итог
+`Err: 0 (0.00%)`; ожидаемые конфликтные ответы `409` учитываются JSR223-
+постпроцессорами и не считаются ошибками отдельных запросов. Результаты можно
+сохранить в `jmeter/results.jtl`, HTML-отчёт — в `jmeter/report`.
 
 ## REST API
 

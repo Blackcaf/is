@@ -91,10 +91,6 @@ public class ImportOperation {
         this.addedCount = addedCount;
     }
 
-    public Integer getTotalRows() {
-        return totalRows;
-    }
-
     public void setTotalRows(Integer totalRows) {
         this.totalRows = totalRows;
     }

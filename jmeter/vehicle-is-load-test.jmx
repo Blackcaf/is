@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
   <hashTree>
-    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Vehicle IS LR2 - concurrent users" enabled="true">
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Vehicle IS LR2 - concurrent users">
       <stringProp name="TestPlan.comments">Проверка изоляции транзакций, ограничений уникальности и импорта.
 Запуск: jmeter -n -t jmeter/vehicle-is-load-test.jmx -l jmeter/results.jtl -e -o jmeter/report
-Параметры: -Jhost=localhost -Jport=8080 -Jcontext= (для WildFly: -Jport=8180 -Jcontext=/vehicle-is)</stringProp>
-      <boolProp name="TestPlan.functional_mode">false</boolProp>
-      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+Параметры: -Jhost=localhost -Jport=8080 -Jcontext= (для Helios/WildFly: -Jport=25500 -Jcontext=/vehicle-is)</stringProp>
       <boolProp name="TestPlan.serialize_threadgroups">true</boolProp>
-      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
         <collectionProp name="Arguments.arguments">
           <elementProp name="host" elementType="Argument">
             <stringProp name="Argument.name">host</stringProp>
@@ -57,36 +56,30 @@
           </elementProp>
         </collectionProp>
       </elementProp>
-      <stringProp name="TestPlan.user_define_classpath"></stringProp>
     </TestPlan>
     <hashTree>
-      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
-        <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
-          <collectionProp name="Arguments.arguments"/>
-        </elementProp>
-        <stringProp name="HTTPSampler.protocol">${protocol}</stringProp>
+      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults">
+        <intProp name="HTTPSampler.connect_timeout">10000</intProp>
+        <intProp name="HTTPSampler.response_timeout">30000</intProp>
         <stringProp name="HTTPSampler.domain">${host}</stringProp>
         <stringProp name="HTTPSampler.port">${port}</stringProp>
+        <stringProp name="HTTPSampler.protocol">${protocol}</stringProp>
         <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
-        <stringProp name="HTTPSampler.path"></stringProp>
-        <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
-        <stringProp name="HTTPSampler.connect_timeout">10000</stringProp>
-        <stringProp name="HTTPSampler.response_timeout">30000</stringProp>
+        <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+          <collectionProp name="Arguments.arguments"/>
+        </elementProp>
+        <stringProp name="HTTPSampler.implementation"></stringProp>
       </ConfigTestElement>
       <hashTree/>
-
-      <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="00 Setup: runId and target objects" enabled="true">
-        <stringProp name="ThreadGroup.on_sample_error">stopthread</stringProp>
-        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
-          <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">1</stringProp>
-        </elementProp>
-        <stringProp name="ThreadGroup.num_threads">1</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
-        <boolProp name="ThreadGroup.scheduler">false</boolProp>
-        <stringProp name="ThreadGroup.duration"></stringProp>
-        <stringProp name="ThreadGroup.delay"></stringProp>
+      <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="00 Setup: runId and target objects">
+        <intProp name="ThreadGroup.num_threads">1</intProp>
+        <intProp name="ThreadGroup.ramp_time">0</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">stopthread</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
       </SetupThreadGroup>
       <hashTree>
         <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="Cookie Manager" enabled="true">
@@ -95,39 +88,34 @@
           <boolProp name="CookieManager.controlledByThreadGroup">false</boolProp>
         </CookieManager>
         <hashTree/>
-
         <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Init runId" enabled="true">
           <stringProp name="cacheKey">true</stringProp>
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
           <stringProp name="scriptLanguage">groovy</stringProp>
-          <stringProp name="script"><![CDATA[
+          <stringProp name="script">
 def runId = String.valueOf(System.currentTimeMillis())
-props.put('runId', runId)
-props.put('duplicateName', 'DUP-' + runId)
-log.info('JMeter runId=' + runId)
-]]></stringProp>
+props.put(&apos;runId&apos;, runId)
+props.put(&apos;duplicateName&apos;, &apos;DUP-&apos; + runId)
+log.info(&apos;JMeter runId=&apos; + runId)
+</stringProp>
         </JSR223Sampler>
         <hashTree/>
-
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login admin" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+          <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{"username":"${adminUser}","password":"${adminPass}"}</stringProp>
+                <stringProp name="Argument.value">{&quot;username&quot;:&quot;${adminUser}&quot;,&quot;password&quot;:&quot;${adminPass}&quot;}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON" enabled="true">
@@ -150,25 +138,21 @@ log.info('JMeter runId=' + runId)
           </ResponseAssertion>
           <hashTree/>
         </hashTree>
-
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create target 1" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+          <stringProp name="HTTPSampler.path">${context}/api/vehicles</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{"name":"TARGET1-${__P(runId)}","coordinates":{"x":10.0,"y":10},"type":"DRONE","enginePower":10.0,"numberOfWheels":4,"capacity":2,"distanceTravelled":100.0,"fuelConsumption":5.0,"fuelType":"ELECTRICITY"}</stringProp>
+                <stringProp name="Argument.value">{&quot;name&quot;:&quot;TARGET1-${__P(runId)}&quot;,&quot;coordinates&quot;:{&quot;x&quot;:10.0,&quot;y&quot;:10},&quot;type&quot;:&quot;DRONE&quot;,&quot;enginePower&quot;:10.0,&quot;numberOfWheels&quot;:4,&quot;capacity&quot;:2,&quot;distanceTravelled&quot;:100.0,&quot;fuelConsumption&quot;:5.0,&quot;fuelType&quot;:&quot;ELECTRICITY&quot;}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/vehicles</stringProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON" enabled="true">
@@ -182,7 +166,7 @@ log.info('JMeter runId=' + runId)
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Create 201" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="49586">201</stringProp>
+              <stringProp name="49587">201</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message">Не удалось создать target 1</stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
@@ -195,35 +179,31 @@ log.info('JMeter runId=' + runId)
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="script"><![CDATA[
-if (prev.getResponseCode() == '201') {
+            <stringProp name="script">
+if (prev.getResponseCode() == &apos;201&apos;) {
     def json = new groovy.json.JsonSlurper().parseText(prev.getResponseDataAsString())
-    props.put('target1Id', String.valueOf(json.id))
-    props.put('target1Version', String.valueOf(json.version))
+    props.put(&apos;target1Id&apos;, String.valueOf(json.id))
+    props.put(&apos;target1Version&apos;, String.valueOf(json.version))
 }
-]]></stringProp>
+</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create target 2" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+          <stringProp name="HTTPSampler.path">${context}/api/vehicles</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{"name":"TARGET2-${__P(runId)}","coordinates":{"x":20.0,"y":20},"type":"BOAT","enginePower":20.0,"numberOfWheels":2,"capacity":4,"distanceTravelled":200.0,"fuelConsumption":8.0,"fuelType":"GASOLINE"}</stringProp>
+                <stringProp name="Argument.value">{&quot;name&quot;:&quot;TARGET2-${__P(runId)}&quot;,&quot;coordinates&quot;:{&quot;x&quot;:20.0,&quot;y&quot;:20},&quot;type&quot;:&quot;BOAT&quot;,&quot;enginePower&quot;:20.0,&quot;numberOfWheels&quot;:2,&quot;capacity&quot;:4,&quot;distanceTravelled&quot;:200.0,&quot;fuelConsumption&quot;:8.0,&quot;fuelType&quot;:&quot;GASOLINE&quot;}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/vehicles</stringProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON" enabled="true">
@@ -237,7 +217,7 @@ if (prev.getResponseCode() == '201') {
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Create 201" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="49586">201</stringProp>
+              <stringProp name="49587">201</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message">Не удалось создать target 2</stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
@@ -250,40 +230,36 @@ if (prev.getResponseCode() == '201') {
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="script"><![CDATA[
-if (prev.getResponseCode() == '201') {
+            <stringProp name="script">
+if (prev.getResponseCode() == &apos;201&apos;) {
     def json = new groovy.json.JsonSlurper().parseText(prev.getResponseDataAsString())
-    props.put('target2Id', String.valueOf(json.id))
-    props.put('target2Version', String.valueOf(json.version))
+    props.put(&apos;target2Id&apos;, String.valueOf(json.id))
+    props.put(&apos;target2Version&apos;, String.valueOf(json.version))
 }
-]]></stringProp>
+</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
       </hashTree>
-
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="01 Two admins: create/edit/delete races" enabled="true">
-        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
-        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
-          <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">1</stringProp>
-        </elementProp>
-        <stringProp name="ThreadGroup.num_threads">2</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
-        <boolProp name="ThreadGroup.scheduler">false</boolProp>
-        <stringProp name="ThreadGroup.duration"></stringProp>
-        <stringProp name="ThreadGroup.delay"></stringProp>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="01 Two admins: create/edit/delete races">
+        <intProp name="ThreadGroup.num_threads">2</intProp>
+        <intProp name="ThreadGroup.ramp_time">0</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
       </ThreadGroup>
       <hashTree>
-        <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="Cookie Manager" enabled="true">
+        <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="Cookie Manager">
           <collectionProp name="CookieManager.cookies"/>
           <boolProp name="CookieManager.clearEachIteration">true</boolProp>
           <boolProp name="CookieManager.controlledByThreadGroup">false</boolProp>
         </CookieManager>
         <hashTree/>
-        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Admins (admin, admin2)" enabled="true">
-          <stringProp name="filename">${adminsFile}</stringProp>
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Admins (admin, admin2)">
+            <stringProp name="filename">${adminsFile}</stringProp>
           <stringProp name="fileEncoding">UTF-8</stringProp>
           <stringProp name="variableNames">loginUser,loginPass</stringProp>
           <boolProp name="ignoreFirstLine">false</boolProp>
@@ -294,25 +270,21 @@ if (prev.getResponseCode() == '201') {
           <stringProp name="shareMode">shareMode.all</stringProp>
         </CSVDataSet>
         <hashTree/>
-
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login (each admin)" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login (each admin)">
+          <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{"username":"${loginUser}","password":"${loginPass}"}</stringProp>
+                <stringProp name="Argument.value">{&quot;username&quot;:&quot;${loginUser}&quot;,&quot;password&quot;:&quot;${loginPass}&quot;}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON" enabled="true">
@@ -335,31 +307,26 @@ if (prev.getResponseCode() == '201') {
           </ResponseAssertion>
           <hashTree/>
         </hashTree>
-
-        <SyncTimer guiclass="TestBeanGUI" testclass="SyncTimer" testname="Align: duplicate create" enabled="true">
+        <SyncTimer guiclass="TestBeanGUI" testclass="SyncTimer" testname="Align: duplicate create">
           <intProp name="groupSize">2</intProp>
           <longProp name="timeoutInMs">10000</longProp>
         </SyncTimer>
         <hashTree/>
-
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Concurrent create with same unique name" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+          <stringProp name="HTTPSampler.path">${context}/api/vehicles</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{"name":"${__P(duplicateName)}","coordinates":{"x":1.0,"y":1},"type":"DRONE","enginePower":10.0,"numberOfWheels":4,"capacity":2,"distanceTravelled":100.0,"fuelConsumption":5.0,"fuelType":"ELECTRICITY"}</stringProp>
+                <stringProp name="Argument.value">{&quot;name&quot;:&quot;${__P(duplicateName)}&quot;,&quot;coordinates&quot;:{&quot;x&quot;:1.0,&quot;y&quot;:1},&quot;type&quot;:&quot;DRONE&quot;,&quot;enginePower&quot;:10.0,&quot;numberOfWheels&quot;:4,&quot;capacity&quot;:2,&quot;distanceTravelled&quot;:100.0,&quot;fuelConsumption&quot;:5.0,&quot;fuelType&quot;:&quot;ELECTRICITY&quot;}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/vehicles</stringProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON" enabled="true">
@@ -371,15 +338,15 @@ if (prev.getResponseCode() == '201') {
             </collectionProp>
           </HeaderManager>
           <hashTree/>
-          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Exactly one 201 and one 409" enabled="true">
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Exactly one 201 and one 409" enabled="false">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="1">201</stringProp>
-              <stringProp name="2">409</stringProp>
+              <stringProp name="49587">201</stringProp>
+              <stringProp name="51517">409</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message">Ожидался 201 (создан) или 409 (нарушена уникальность)</stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <boolProp name="Assertion.assume_success">false</boolProp>
-            <intProp name="Assertion.test_type">1</intProp>
+            <intProp name="Assertion.test_type">33</intProp>
           </ResponseAssertion>
           <hashTree/>
           <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="Record duplicate create result" enabled="true">
@@ -387,41 +354,37 @@ if (prev.getResponseCode() == '201') {
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="script"><![CDATA[
-def code = prev.getResponseCode()
-def key = (code == '201' || code == '409') ? ('dup' + code) : 'dupOther'
+            <stringProp name="script">
+ def code = prev.getResponseCode()
+ if (code == &apos;201&apos; || code == &apos;409&apos;) prev.setSuccessful(true)
+def key = (code == &apos;201&apos; || code == &apos;409&apos;) ? (&apos;dup&apos; + code) : &apos;dupOther&apos;
 synchronized (props) {
-    props.put(key, String.valueOf(((props.get(key) ?: '0') as int) + 1))
+    props.put(key, String.valueOf(((props.get(key) ?: &apos;0&apos;) as int) + 1))
 }
-]]></stringProp>
+</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-
         <SyncTimer guiclass="TestBeanGUI" testclass="SyncTimer" testname="Align: update same object" enabled="true">
           <intProp name="groupSize">2</intProp>
           <longProp name="timeoutInMs">10000</longProp>
         </SyncTimer>
         <hashTree/>
-
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Concurrent update of the same object" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Concurrent update of the same object">
+          <stringProp name="HTTPSampler.path">${context}/api/vehicles/${__P(target1Id)}</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">PUT</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{"name":"UPD-${__P(runId)}-${__threadNum}","coordinates":{"x":10.0,"y":10},"type":"DRONE","enginePower":11.0,"numberOfWheels":4,"capacity":2,"distanceTravelled":110.0,"fuelConsumption":5.5,"fuelType":"ELECTRICITY","version":${__P(target1Version)}}</stringProp>
+                <stringProp name="Argument.value">{&quot;name&quot;:&quot;UPD-${__P(runId)}-${__threadNum}&quot;,&quot;coordinates&quot;:{&quot;x&quot;:10.0,&quot;y&quot;:10},&quot;type&quot;:&quot;DRONE&quot;,&quot;enginePower&quot;:11.0,&quot;numberOfWheels&quot;:4,&quot;capacity&quot;:2,&quot;distanceTravelled&quot;:110.0,&quot;fuelConsumption&quot;:5.5,&quot;fuelType&quot;:&quot;ELECTRICITY&quot;,&quot;version&quot;:${__P(target1Version)}}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/vehicles/${__P(target1Id)}</stringProp>
-          <stringProp name="HTTPSampler.method">PUT</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON" enabled="true">
@@ -433,15 +396,15 @@ synchronized (props) {
             </collectionProp>
           </HeaderManager>
           <hashTree/>
-          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="One 200 and one 409" enabled="true">
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="One 200 and one 409" enabled="false">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="1">200</stringProp>
-              <stringProp name="2">409</stringProp>
+              <stringProp name="49586">200</stringProp>
+              <stringProp name="51517">409</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message">Ожидался 200 (обновлено) или 409 (конфликт версий)</stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <boolProp name="Assertion.assume_success">false</boolProp>
-            <intProp name="Assertion.test_type">1</intProp>
+            <intProp name="Assertion.test_type">33</intProp>
           </ResponseAssertion>
           <hashTree/>
           <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="Record update result" enabled="true">
@@ -449,53 +412,49 @@ synchronized (props) {
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="script"><![CDATA[
-def code = prev.getResponseCode()
-if (code == '200' || code == '409') {
+            <stringProp name="script">
+ def code = prev.getResponseCode()
+ if (code == &apos;200&apos; || code == &apos;409&apos;) prev.setSuccessful(true)
+if (code == &apos;200&apos; || code == &apos;409&apos;) {
     synchronized (props) {
-        def key = 'upd' + code
-        props.put(key, String.valueOf(((props.get(key) ?: '0') as int) + 1))
+        def key = &apos;upd&apos; + code
+        props.put(key, String.valueOf(((props.get(key) ?: &apos;0&apos;) as int) + 1))
     }
 } else {
     synchronized (props) {
-        props.put('updOther', String.valueOf(((props.get('updOther') ?: '0') as int) + 1))
+        props.put(&apos;updOther&apos;, String.valueOf(((props.get(&apos;updOther&apos;) ?: &apos;0&apos;) as int) + 1))
     }
 }
-]]></stringProp>
+</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-
         <SyncTimer guiclass="TestBeanGUI" testclass="SyncTimer" testname="Align: update vs delete" enabled="true">
           <intProp name="groupSize">2</intProp>
           <longProp name="timeoutInMs">10000</longProp>
         </SyncTimer>
         <hashTree/>
-
-        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Thread 1: update" enabled="true">
+        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Thread 1: update">
           <stringProp name="IfController.condition">${__jexl3(${__threadNum} == 1,)}</stringProp>
           <boolProp name="IfController.evaluateAll">false</boolProp>
           <boolProp name="IfController.useExpression">true</boolProp>
         </IfController>
         <hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Race: update target 2" enabled="true">
-            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <stringProp name="HTTPSampler.path">${context}/api/vehicles/${__P(target2Id)}</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <stringProp name="HTTPSampler.method">PUT</stringProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                  <stringProp name="Argument.value">{"name":"RACE-UPD-${__P(runId)}","coordinates":{"x":20.0,"y":20},"type":"BOAT","enginePower":21.0,"numberOfWheels":2,"capacity":4,"distanceTravelled":210.0,"fuelConsumption":8.5,"fuelType":"GASOLINE","version":${__P(target2Version)}}</stringProp>
+                  <stringProp name="Argument.value">{&quot;name&quot;:&quot;RACE-UPD-${__P(runId)}&quot;,&quot;coordinates&quot;:{&quot;x&quot;:20.0,&quot;y&quot;:20},&quot;type&quot;:&quot;BOAT&quot;,&quot;enginePower&quot;:21.0,&quot;numberOfWheels&quot;:2,&quot;capacity&quot;:4,&quot;distanceTravelled&quot;:210.0,&quot;fuelConsumption&quot;:8.5,&quot;fuelType&quot;:&quot;GASOLINE&quot;,&quot;version&quot;:${__P(target2Version)}}</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
               </collectionProp>
             </elementProp>
-            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-            <stringProp name="HTTPSampler.path">${context}/api/vehicles/${__P(target2Id)}</stringProp>
-            <stringProp name="HTTPSampler.method">PUT</stringProp>
-            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
           </HTTPSamplerProxy>
           <hashTree>
             <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON" enabled="true">
@@ -507,9 +466,9 @@ if (code == '200' || code == '409') {
               </collectionProp>
             </HeaderManager>
             <hashTree/>
-            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Update: 200/404/409" enabled="true">
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Update: 200/404/409" enabled="false">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="1">200|404|409</stringProp>
+                <stringProp name="337199151">200|404|409</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message">Недопустимый код ответа при конкурентном обновлении</stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
@@ -522,40 +481,37 @@ if (code == '200' || code == '409') {
               <stringProp name="filename"></stringProp>
               <stringProp name="parameters"></stringProp>
               <stringProp name="scriptLanguage">groovy</stringProp>
-              <stringProp name="script"><![CDATA[
-def code = prev.getResponseCode()
+              <stringProp name="script">
+ def code = prev.getResponseCode()
+ if (code == &apos;200&apos; || code == &apos;404&apos; || code == &apos;409&apos;) prev.setSuccessful(true)
 synchronized (props) {
-    props.put('raceUpd' + code, String.valueOf(((props.get('raceUpd' + code) ?: '0') as int) + 1))
+    props.put(&apos;raceUpd&apos; + code, String.valueOf(((props.get(&apos;raceUpd&apos; + code) ?: &apos;0&apos;) as int) + 1))
 }
-]]></stringProp>
+</stringProp>
             </JSR223PostProcessor>
             <hashTree/>
           </hashTree>
         </hashTree>
-
-        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Thread 2: delete" enabled="true">
+        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Thread 2: delete">
           <stringProp name="IfController.condition">${__jexl3(${__threadNum} == 2,)}</stringProp>
           <boolProp name="IfController.evaluateAll">false</boolProp>
           <boolProp name="IfController.useExpression">true</boolProp>
         </IfController>
         <hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Race: delete target 2" enabled="true">
-            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <stringProp name="HTTPSampler.path">${context}/api/vehicles/${__P(target2Id)}?version=${__P(target2Version)}</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <stringProp name="HTTPSampler.method">DELETE</stringProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
               <collectionProp name="Arguments.arguments"/>
             </elementProp>
-            <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
-            <stringProp name="HTTPSampler.path">${context}/api/vehicles/${__P(target2Id)}?version=${__P(target2Version)}</stringProp>
-            <stringProp name="HTTPSampler.method">DELETE</stringProp>
-            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
           </HTTPSamplerProxy>
           <hashTree>
-            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Delete: 200/404/409" enabled="true">
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Delete: 200/404/409" enabled="false">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="1">200|404|409</stringProp>
+                <stringProp name="337199151">200|404|409</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message">Недопустимый код ответа при конкурентном удалении</stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
@@ -568,30 +524,27 @@ synchronized (props) {
               <stringProp name="filename"></stringProp>
               <stringProp name="parameters"></stringProp>
               <stringProp name="scriptLanguage">groovy</stringProp>
-              <stringProp name="script"><![CDATA[
-def code = prev.getResponseCode()
+              <stringProp name="script">
+ def code = prev.getResponseCode()
+ if (code == &apos;200&apos; || code == &apos;404&apos; || code == &apos;409&apos;) prev.setSuccessful(true)
 synchronized (props) {
-    props.put('raceDel' + code, String.valueOf(((props.get('raceDel' + code) ?: '0') as int) + 1))
+    props.put(&apos;raceDel&apos; + code, String.valueOf(((props.get(&apos;raceDel&apos; + code) ?: &apos;0&apos;) as int) + 1))
 }
-]]></stringProp>
+</stringProp>
             </JSR223PostProcessor>
             <hashTree/>
           </hashTree>
         </hashTree>
       </hashTree>
-
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="02 Import: valid, invalid, atomicity" enabled="true">
-        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
-        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
-          <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">1</stringProp>
-        </elementProp>
-        <stringProp name="ThreadGroup.num_threads">1</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
-        <boolProp name="ThreadGroup.scheduler">false</boolProp>
-        <stringProp name="ThreadGroup.duration"></stringProp>
-        <stringProp name="ThreadGroup.delay"></stringProp>
+        <intProp name="ThreadGroup.num_threads">1</intProp>
+        <intProp name="ThreadGroup.ramp_time">0</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
       </ThreadGroup>
       <hashTree>
         <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="Cookie Manager" enabled="true">
@@ -600,25 +553,21 @@ synchronized (props) {
           <boolProp name="CookieManager.controlledByThreadGroup">false</boolProp>
         </CookieManager>
         <hashTree/>
-
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login user" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login user">
+          <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{"username":"${user}","password":"${userPass}"}</stringProp>
+                <stringProp name="Argument.value">{&quot;username&quot;:&quot;${user}&quot;,&quot;password&quot;:&quot;${userPass}&quot;}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON" enabled="true">
@@ -641,52 +590,48 @@ synchronized (props) {
           </ResponseAssertion>
           <hashTree/>
         </hashTree>
-
-        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Generate valid CSV (3 rows)" enabled="true">
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Generate valid CSV (3 rows)">
           <stringProp name="cacheKey">true</stringProp>
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
           <stringProp name="scriptLanguage">groovy</stringProp>
-          <stringProp name="script"><![CDATA[
-def runId = props.get('runId')
-def csv = '''name;coordinates.x;coordinates.y;type;enginePower;numberOfWheels;capacity;distanceTravelled;fuelConsumption;fuelType
-IMP-''' + runId + '''-1;501.1;1;DRONE;15.5;4;2;120.0;3.5;ELECTRICITY
-IMP-''' + runId + '''-2;502.2;2;BOAT;220;;8;5400.5;18.2;GASOLINE
-IMP-''' + runId + '''-3;503.3;3;BICYCLE;0.5;2;1;350.0;0.1;
-'''
-def file = File.createTempFile('vehicle-import-valid-', '.csv')
-file.write(csv, 'UTF-8')
-vars.put('validImportFile', file.getAbsolutePath())
-]]></stringProp>
+          <stringProp name="script">
+def runId = props.get(&apos;runId&apos;)
+def csv = &apos;&apos;&apos;name;coordinates.x;coordinates.y;type;enginePower;numberOfWheels;capacity;distanceTravelled;fuelConsumption;fuelType
+IMP-&apos;&apos;&apos; + runId + &apos;&apos;&apos;-1;501.1;1;DRONE;15.5;4;2;120.0;3.5;ELECTRICITY
+IMP-&apos;&apos;&apos; + runId + &apos;&apos;&apos;-2;502.2;2;BOAT;220;;8;5400.5;18.2;GASOLINE
+IMP-&apos;&apos;&apos; + runId + &apos;&apos;&apos;-3;503.3;3;BICYCLE;0.5;2;1;350.0;0.1;
+&apos;&apos;&apos;
+def file = File.createTempFile(&apos;vehicle-import-valid-&apos;, &apos;.csv&apos;)
+file.write(csv, &apos;UTF-8&apos;)
+vars.put(&apos;validImportFile&apos;, file.getAbsolutePath())
+</stringProp>
         </JSR223Sampler>
         <hashTree/>
-
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import valid CSV" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
-            <collectionProp name="Arguments.arguments"/>
-          </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import valid CSV">
           <stringProp name="HTTPSampler.path">${context}/api/imports</stringProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
           <boolProp name="HTTPSampler.DO_MULTIPART_POST">true</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
           <elementProp name="HTTPsampler.Files" elementType="HTTPFileArgs">
             <collectionProp name="HTTPFileArgs.files">
-              <elementProp name="" elementType="HTTPFileArg">
+              <elementProp name="${validImportFile}" elementType="HTTPFileArg">
                 <stringProp name="File.path">${validImportFile}</stringProp>
-                <stringProp name="File.ParamName">file</stringProp>
-                <stringProp name="File.MimeType">text/csv</stringProp>
+                <stringProp name="File.paramname">file</stringProp>
+                <stringProp name="File.mimetype">text/csv</stringProp>
               </elementProp>
             </collectionProp>
+          </elementProp>
+          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+            <collectionProp name="Arguments.arguments"/>
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Import 201" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="49586">201</stringProp>
+              <stringProp name="49587">201</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message">Импорт корректного файла должен вернуть 201</stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
@@ -706,63 +651,59 @@ vars.put('validImportFile', file.getAbsolutePath())
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="script"><![CDATA[
-props.put('validImportCode', prev.getResponseCode())
-props.put('validImportOpId', vars.get('validImportOpId'))
-props.put('validImportCount', vars.get('validImportCount'))
-]]></stringProp>
+            <stringProp name="script">
+props.put(&apos;validImportCode&apos;, prev.getResponseCode())
+props.put(&apos;validImportOpId&apos;, vars.get(&apos;validImportOpId&apos;))
+props.put(&apos;validImportCount&apos;, vars.get(&apos;validImportCount&apos;))
+</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-
-        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Generate invalid CSV (atomicity)" enabled="true">
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Generate invalid CSV (atomicity)">
           <stringProp name="cacheKey">true</stringProp>
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
           <stringProp name="scriptLanguage">groovy</stringProp>
-          <stringProp name="script"><![CDATA[
-def runId = props.get('runId')
-def csv = '''name;coordinates.x;coordinates.y;type;enginePower;numberOfWheels;capacity;distanceTravelled;fuelConsumption;fuelType
-ATOMIC-''' + runId + '''-OK;601.1;1;DRONE;15.5;4;2;120.0;3.5;ELECTRICITY
-ATOMIC-''' + runId + '''-BAD;602.2;2;DRONE;-5;4;2;120.0;3.5;ELECTRICITY
-'''
-def file = File.createTempFile('vehicle-import-invalid-', '.csv')
-file.write(csv, 'UTF-8')
-vars.put('invalidImportFile', file.getAbsolutePath())
-]]></stringProp>
+          <stringProp name="script">
+def runId = props.get(&apos;runId&apos;)
+def csv = &apos;&apos;&apos;name;coordinates.x;coordinates.y;type;enginePower;numberOfWheels;capacity;distanceTravelled;fuelConsumption;fuelType
+ATOMIC-&apos;&apos;&apos; + runId + &apos;&apos;&apos;-OK;601.1;1;DRONE;15.5;4;2;120.0;3.5;ELECTRICITY
+ATOMIC-&apos;&apos;&apos; + runId + &apos;&apos;&apos;-BAD;602.2;2;DRONE;-5;4;2;120.0;3.5;ELECTRICITY
+&apos;&apos;&apos;
+def file = File.createTempFile(&apos;vehicle-import-invalid-&apos;, &apos;.csv&apos;)
+file.write(csv, &apos;UTF-8&apos;)
+vars.put(&apos;invalidImportFile&apos;, file.getAbsolutePath())
+</stringProp>
         </JSR223Sampler>
         <hashTree/>
-
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import invalid CSV (must rollback)" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
-            <collectionProp name="Arguments.arguments"/>
-          </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import invalid CSV (must rollback)">
           <stringProp name="HTTPSampler.path">${context}/api/imports</stringProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
           <boolProp name="HTTPSampler.DO_MULTIPART_POST">true</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
           <elementProp name="HTTPsampler.Files" elementType="HTTPFileArgs">
             <collectionProp name="HTTPFileArgs.files">
-              <elementProp name="" elementType="HTTPFileArg">
+              <elementProp name="${invalidImportFile}" elementType="HTTPFileArg">
                 <stringProp name="File.path">${invalidImportFile}</stringProp>
-                <stringProp name="File.ParamName">file</stringProp>
-                <stringProp name="File.MimeType">text/csv</stringProp>
+                <stringProp name="File.paramname">file</stringProp>
+                <stringProp name="File.mimetype">text/csv</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
+          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Import 400" enabled="true">
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Import 400">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="49586">400</stringProp>
+              <stringProp name="51508">400</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message">Некорректный импорт должен вернуть 400</stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
-            <boolProp name="Assertion.assume_success">false</boolProp>
+            <boolProp name="Assertion.assume_success">true</boolProp>
             <intProp name="Assertion.test_type">8</intProp>
           </ResponseAssertion>
           <hashTree/>
@@ -771,25 +712,21 @@ vars.put('invalidImportFile', file.getAbsolutePath())
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="script"><![CDATA[
-props.put('failedImportCode', prev.getResponseCode())
-]]></stringProp>
+            <stringProp name="script">
+props.put(&apos;failedImportCode&apos;, prev.getResponseCode())
+</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Check atomicity: no ATOMIC objects" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Check atomicity: no ATOMIC objects">
+          <stringProp name="HTTPSampler.path">${context}/api/vehicles?filterField=name&amp;filterValue=ATOMIC-${__P(runId)}&amp;page=1&amp;size=10</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/vehicles?filterField=name&amp;filterValue=ATOMIC-${__P(runId)}&amp;page=1&amp;size=10</stringProp>
-          <stringProp name="HTTPSampler.method">GET</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Atomicity response 200" enabled="true">
@@ -807,26 +744,22 @@ props.put('failedImportCode', prev.getResponseCode())
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="script"><![CDATA[
+            <stringProp name="script">
 def json = new groovy.json.JsonSlurper().parseText(prev.getResponseDataAsString())
-props.put('atomicTotal', String.valueOf(json.total))
-]]></stringProp>
+props.put(&apos;atomicTotal&apos;, String.valueOf(json.total))
+</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="User import history" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="User import history">
+          <stringProp name="HTTPSampler.path">${context}/api/imports?page=1&amp;size=100</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/imports?page=1&amp;size=100</stringProp>
-          <stringProp name="HTTPSampler.method">GET</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="Check own history" enabled="true">
@@ -834,33 +767,29 @@ props.put('atomicTotal', String.valueOf(json.total))
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="script"><![CDATA[
+            <stringProp name="script">
 def body = prev.getResponseDataAsString()
-def opId = props.get('validImportOpId')
-props.put('userHistoryOk', String.valueOf(body.contains('"id":' + opId) && body.contains('"username":"user"')))
-]]></stringProp>
+def opId = props.get(&apos;validImportOpId&apos;)
+props.put(&apos;userHistoryOk&apos;, String.valueOf(body.contains(&apos;&quot;id&quot;:&apos; + opId) &amp;&amp; body.contains(&apos;&quot;username&quot;:&quot;user&quot;&apos;)))
+</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login admin for history" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login admin for history">
+          <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{"username":"${adminUser}","password":"${adminPass}"}</stringProp>
+                <stringProp name="Argument.value">{&quot;username&quot;:&quot;${adminUser}&quot;,&quot;password&quot;:&quot;${adminPass}&quot;}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON" enabled="true">
@@ -873,19 +802,15 @@ props.put('userHistoryOk', String.valueOf(body.contains('"id":' + opId) && body.
           </HeaderManager>
           <hashTree/>
         </hashTree>
-
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Admin import history (sees all)" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Admin import history (sees all)">
+          <stringProp name="HTTPSampler.path">${context}/api/imports?page=1&amp;size=100</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
-          <stringProp name="HTTPSampler.path">${context}/api/imports?page=1&amp;size=100</stringProp>
-          <stringProp name="HTTPSampler.method">GET</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="Check admin history" enabled="true">
@@ -893,28 +818,98 @@ props.put('userHistoryOk', String.valueOf(body.contains('"id":' + opId) && body.
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="script"><![CDATA[
+            <stringProp name="script">
 def body = prev.getResponseDataAsString()
-def opId = props.get('validImportOpId')
-props.put('adminHistoryOk', String.valueOf(body.contains('"id":' + opId) && body.contains('"username":"user"')))
-]]></stringProp>
+def opId = props.get(&apos;validImportOpId&apos;)
+props.put(&apos;adminHistoryOk&apos;, String.valueOf(body.contains(&apos;&quot;id&quot;:&apos; + opId) &amp;&amp; body.contains(&apos;&quot;username&quot;:&quot;user&quot;&apos;)))
+</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>true</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+              <sentBytes>true</sentBytes>
+              <url>true</url>
+              <threadCounts>true</threadCounts>
+              <idleTime>true</idleTime>
+              <connectTime>true</connectTime>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>true</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+              <sentBytes>true</sentBytes>
+              <url>true</url>
+              <threadCounts>true</threadCounts>
+              <idleTime>true</idleTime>
+              <connectTime>true</connectTime>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
       </hashTree>
-
       <PostThreadGroup guiclass="PostThreadGroupGui" testclass="PostThreadGroup" testname="99 Final verification" enabled="true">
-        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
-        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
-          <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">1</stringProp>
-        </elementProp>
-        <stringProp name="ThreadGroup.num_threads">1</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
-        <boolProp name="ThreadGroup.scheduler">false</boolProp>
-        <stringProp name="ThreadGroup.duration"></stringProp>
-        <stringProp name="ThreadGroup.delay"></stringProp>
+        <intProp name="ThreadGroup.num_threads">1</intProp>
+        <intProp name="ThreadGroup.ramp_time">0</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
       </PostThreadGroup>
       <hashTree>
         <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Verify transaction isolation expectations" enabled="true">
@@ -922,62 +917,136 @@ props.put('adminHistoryOk', String.valueOf(body.contains('"id":' + opId) && body
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
           <stringProp name="scriptLanguage">groovy</stringProp>
-          <stringProp name="script"><![CDATA[
+          <stringProp name="script">
 def failures = []
-def get = { key -> (props.get(key) ?: '0') as int }
+def get = { key -&gt; (props.get(key) ?: &apos;0&apos;) as int }
 
-if (get('dup201') != 1 || get('dup409') != 1 || get('dupOther') != 0) {
-    failures << "Уникальность названия: ожидалось ровно по одному 201 и 409, получено 201=${get('dup201')}, 409=${get('dup409')}, other=${get('dupOther')}"
+if (get(&apos;dup201&apos;) != 1 || get(&apos;dup409&apos;) != 1 || get(&apos;dupOther&apos;) != 0) {
+    failures &lt;&lt; &quot;Уникальность названия: ожидалось ровно по одному 201 и 409, получено 201=${get(&apos;dup201&apos;)}, 409=${get(&apos;dup409&apos;)}, other=${get(&apos;dupOther&apos;)}&quot;
 }
-if (get('upd200') != 1 || get('upd409') != 1 || get('updOther') != 0) {
-    failures << "Конкурентное обновление: ожидалось ровно по одному 200 и 409, получено 200=${get('upd200')}, 409=${get('upd409')}, other=${get('updOther')}"
+if (get(&apos;upd200&apos;) != 1 || get(&apos;upd409&apos;) != 1 || get(&apos;updOther&apos;) != 0) {
+    failures &lt;&lt; &quot;Конкурентное обновление: ожидалось ровно по одному 200 и 409, получено 200=${get(&apos;upd200&apos;)}, 409=${get(&apos;upd409&apos;)}, other=${get(&apos;updOther&apos;)}&quot;
 }
 
-def raceUpdateOk = get('raceUpd200')
-def raceDeleteOk = get('raceDel200')
-def raceOther = get('raceUpd404') + get('raceUpd409') + get('raceDel404') + get('raceDel409')
+def raceUpdateOk = get(&apos;raceUpd200&apos;)
+def raceDeleteOk = get(&apos;raceDel200&apos;)
+def raceOther = get(&apos;raceUpd404&apos;) + get(&apos;raceUpd409&apos;) + get(&apos;raceDel404&apos;) + get(&apos;raceDel409&apos;)
 def raceTotal = raceUpdateOk + raceDeleteOk + raceOther
 if (raceTotal != 2) {
-    failures << "Гонка update/delete: ожидалось 2 операции, получено ${raceTotal}"
+    failures &lt;&lt; &quot;Гонка update/delete: ожидалось 2 операции, получено ${raceTotal}&quot;
 }
 if ((raceUpdateOk + raceDeleteOk) != 1) {
-    failures << "Гонка update/delete: ровно одна операция должна завершиться успешно, получено update200=${raceUpdateOk}, delete200=${raceDeleteOk}"
+    failures &lt;&lt; &quot;Гонка update/delete: ровно одна операция должна завершиться успешно, получено update200=${raceUpdateOk}, delete200=${raceDeleteOk}&quot;
 }
 
-if (props.get('validImportCode') != '201') {
-    failures << "Импорт корректного файла: ожидался 201, получен ${props.get('validImportCode')}"
+if (props.get(&apos;validImportCode&apos;) != &apos;201&apos;) {
+    failures &lt;&lt; &quot;Импорт корректного файла: ожидался 201, получен ${props.get(&apos;validImportCode&apos;)}&quot;
 }
-if (get('validImportCount') != 3) {
-    failures << "Импорт корректного файла: ожидалось 3 добавленных объекта, получено ${get('validImportCount')}"
+if (get(&apos;validImportCount&apos;) != 3) {
+    failures &lt;&lt; &quot;Импорт корректного файла: ожидалось 3 добавленных объекта, получено ${get(&apos;validImportCount&apos;)}&quot;
 }
-if (props.get('failedImportCode') != '400') {
-    failures << "Импорт некорректного файла: ожидался 400, получен ${props.get('failedImportCode')}"
+if (props.get(&apos;failedImportCode&apos;) != &apos;400&apos;) {
+    failures &lt;&lt; &quot;Импорт некорректного файла: ожидался 400, получен ${props.get(&apos;failedImportCode&apos;)}&quot;
 }
-if (get('atomicTotal') != 0) {
-    failures << "Атомарность импорта: после ошибочного импорта найдено ${get('atomicTotal')} объектов ATOMIC-*"
+if (get(&apos;atomicTotal&apos;) != 0) {
+    failures &lt;&lt; &quot;Атомарность импорта: после ошибочного импорта найдено ${get(&apos;atomicTotal&apos;)} объектов ATOMIC-*&quot;
 }
-if (props.get('userHistoryOk') != 'true') {
-    failures << "История импорта: пользователь не видит свою успешную операцию"
+if (props.get(&apos;userHistoryOk&apos;) != &apos;true&apos;) {
+    failures &lt;&lt; &quot;История импорта: пользователь не видит свою успешную операцию&quot;
 }
-if (props.get('adminHistoryOk') != 'true') {
-    failures << "История импорта: администратор не видит операцию обычного пользователя"
+if (props.get(&apos;adminHistoryOk&apos;) != &apos;true&apos;) {
+    failures &lt;&lt; &quot;История импорта: администратор не видит операцию обычного пользователя&quot;
 }
 
-def summary = """Итоги JMeter:
-  create same unique name: 201=${get('dup201')}, 409=${get('dup409')}, other=${get('dupOther')}
-  concurrent update:       200=${get('upd200')}, 409=${get('upd409')}, other=${get('updOther')}
+def summary = &quot;&quot;&quot;Итоги JMeter:
+  create same unique name: 201=${get(&apos;dup201&apos;)}, 409=${get(&apos;dup409&apos;)}, other=${get(&apos;dupOther&apos;)}
+  concurrent update:       200=${get(&apos;upd200&apos;)}, 409=${get(&apos;upd409&apos;)}, other=${get(&apos;updOther&apos;)}
   update/delete race:      update200=${raceUpdateOk}, delete200=${raceDeleteOk}, other=${raceOther}
-  import:                  validCode=${props.get('validImportCode')}, added=${get('validImportCount')}, invalidCode=${props.get('failedImportCode')}, atomicTotal=${get('atomicTotal')}
-  history:                 userOwn=${props.get('userHistoryOk')}, adminAll=${props.get('adminHistoryOk')}
-"""
+  import:                  validCode=${props.get(&apos;validImportCode&apos;)}, added=${get(&apos;validImportCount&apos;)}, invalidCode=${props.get(&apos;failedImportCode&apos;)}, atomicTotal=${get(&apos;atomicTotal&apos;)}
+  history:                 userOwn=${props.get(&apos;userHistoryOk&apos;)}, adminAll=${props.get(&apos;adminHistoryOk&apos;)}
+&quot;&quot;&quot;
 log.info(summary)
 if (!failures.isEmpty()) {
-    throw new AssertionError(failures.join('\n'))
+    throw new AssertionError(failures.join(&apos;\n&apos;))
 }
-]]></stringProp>
+</stringProp>
         </JSR223Sampler>
         <hashTree/>
       </hashTree>
+      <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp>
+          <name>saveConfig</name>
+          <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>true</message>
+            <threadName>true</threadName>
+            <dataType>true</dataType>
+            <encoding>false</encoding>
+            <assertions>true</assertions>
+            <subresults>true</subresults>
+            <responseData>false</responseData>
+            <samplerData>false</samplerData>
+            <xml>false</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <sentBytes>true</sentBytes>
+            <url>true</url>
+            <threadCounts>true</threadCounts>
+            <idleTime>true</idleTime>
+            <connectTime>true</connectTime>
+          </value>
+        </objProp>
+        <stringProp name="filename"></stringProp>
+      </ResultCollector>
+      <hashTree/>
+      <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp>
+          <name>saveConfig</name>
+          <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>true</message>
+            <threadName>true</threadName>
+            <dataType>true</dataType>
+            <encoding>false</encoding>
+            <assertions>true</assertions>
+            <subresults>true</subresults>
+            <responseData>false</responseData>
+            <samplerData>false</samplerData>
+            <xml>false</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <sentBytes>true</sentBytes>
+            <url>true</url>
+            <threadCounts>true</threadCounts>
+            <idleTime>true</idleTime>
+            <connectTime>true</connectTime>
+          </value>
+        </objProp>
+        <stringProp name="filename"></stringProp>
+      </ResultCollector>
+      <hashTree/>
     </hashTree>
   </hashTree>
 </jmeterTestPlan>

@@ -57,20 +57,12 @@ public class AppUser implements Serializable {
         return passwordHash;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
     public UserRole getRole() {
         return role;
     }
 
     public void setRole(UserRole role) {
         this.role = role;
-    }
-
-    public boolean isAdmin() {
-        return role == UserRole.ADMIN;
     }
 
     @Override
