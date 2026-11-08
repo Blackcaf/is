@@ -10,6 +10,7 @@ import ru.itmo.vehicle.domain.Vehicle;
 import ru.itmo.vehicle.domain.VehicleType;
 import ru.itmo.vehicle.repo.VehicleRepository;
 import ru.itmo.vehicle.repo.CoordinatesRepository;
+import ru.itmo.vehicle.exception.ConflictException;
 import ru.itmo.vehicle.exception.ValidationException;
 import ru.itmo.vehicle.service.VehicleEventBus;
 import ru.itmo.vehicle.service.VehicleService;
@@ -48,7 +49,7 @@ class VehicleServiceTest {
     @BeforeEach
     void setUp() {
         repository = mock(VehicleRepository.class);
-        CoordinatesRepository coordinatesRepository = mock(CoordinatesRepository.class);
+        coordinatesRepository = mock(CoordinatesRepository.class);
         eventBus = new VehicleEventBus();
         Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
         service = new VehicleService(repository, coordinatesRepository, validator, eventBus);
@@ -181,5 +182,56 @@ class VehicleServiceTest {
         assertThrows(IllegalArgumentException.class, () -> new Coordinates(863.0, 0));
         assertThrows(IllegalArgumentException.class, () -> new Coordinates(0.0, -860));
         assertDoesNotThrow(() -> new Coordinates(862.0, -859));
+    }
+
+    @Test
+    void createRejectsDuplicateName() {
+        when(repository.existsByNameIgnoreCase("Quadrocopter", null)).thenReturn(true);
+        Vehicle v = vehicle(null, "Quadrocopter", VehicleType.DRONE, null, 1);
+
+        ConflictException exception = assertThrows(ConflictException.class, () -> service.create(v));
+        assertTrue(exception.getFieldErrors().containsKey("name"));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void createReusesExistingCoordinatesWithSamePair() {
+        Coordinates existing = new Coordinates(1.0, 2);
+        existing.setId(10L);
+        when(repository.existsByNameIgnoreCase(any(), any())).thenReturn(false);
+        when(coordinatesRepository.findByPair(1.0, 2)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Vehicle v = vehicle(null, "Reuse", VehicleType.DRONE, null, 1);
+        Vehicle saved = service.create(v);
+
+        assertSame(existing, saved.getCoordinates());
+    }
+
+    @Test
+    void updateRejectsStaleVersion() {
+        Vehicle existing = vehicle(5L, "Old", VehicleType.BOAT, null, 2);
+        existing.setVersion(3L);
+        when(repository.findById(5L)).thenReturn(Optional.of(existing));
+
+        Vehicle changes = vehicle(5L, "New", VehicleType.BOAT, null, 2);
+        changes.setVersion(2L);
+
+        ConflictException exception = assertThrows(ConflictException.class,
+                () -> service.update(5L, changes));
+        assertTrue(exception.getFieldErrors().containsKey("general"));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void deleteRejectsStaleVersion() {
+        Vehicle existing = vehicle(5L, "Old", VehicleType.BOAT, null, 2);
+        existing.setVersion(3L);
+        when(repository.findById(5L)).thenReturn(Optional.of(existing));
+
+        ConflictException exception = assertThrows(ConflictException.class,
+                () -> service.delete(5L, 2L));
+        assertTrue(exception.getFieldErrors().containsKey("general"));
+        verify(repository, never()).deleteById(any());
     }
 }
