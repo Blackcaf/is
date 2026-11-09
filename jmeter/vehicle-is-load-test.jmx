@@ -16,7 +16,7 @@
           </elementProp>
           <elementProp name="port" elementType="Argument">
             <stringProp name="Argument.name">port</stringProp>
-            <stringProp name="Argument.value">${__P(port,8080)}</stringProp>
+            <stringProp name="Argument.value">${__P(port,25500)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="protocol" elementType="Argument">
@@ -26,7 +26,7 @@
           </elementProp>
           <elementProp name="context" elementType="Argument">
             <stringProp name="Argument.name">context</stringProp>
-            <stringProp name="Argument.value">${__P(context,)}</stringProp>
+            <stringProp name="Argument.value">${__P(context,/vehicle-is)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="adminsFile" elementType="Argument">
@@ -71,7 +71,7 @@
         <stringProp name="HTTPSampler.implementation"></stringProp>
       </ConfigTestElement>
       <hashTree/>
-      <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="00 Setup: runId and target objects">
+      <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="00 Setup: runId and target objects" enabled="true">
         <intProp name="ThreadGroup.num_threads">1</intProp>
         <intProp name="ThreadGroup.ramp_time">0</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
@@ -241,7 +241,7 @@ if (prev.getResponseCode() == &apos;201&apos;) {
           <hashTree/>
         </hashTree>
       </hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="01 Two admins: create/edit/delete races">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="01 Two admins: create/edit/delete races" enabled="true">
         <intProp name="ThreadGroup.num_threads">2</intProp>
         <intProp name="ThreadGroup.ramp_time">0</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
@@ -252,14 +252,14 @@ if (prev.getResponseCode() == &apos;201&apos;) {
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="Cookie Manager">
+        <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="Cookie Manager" enabled="true">
           <collectionProp name="CookieManager.cookies"/>
           <boolProp name="CookieManager.clearEachIteration">true</boolProp>
           <boolProp name="CookieManager.controlledByThreadGroup">false</boolProp>
         </CookieManager>
         <hashTree/>
-        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Admins (admin, admin2)">
-            <stringProp name="filename">${adminsFile}</stringProp>
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Admins (admin, admin2)" enabled="true">
+          <stringProp name="filename">${adminsFile}</stringProp>
           <stringProp name="fileEncoding">UTF-8</stringProp>
           <stringProp name="variableNames">loginUser,loginPass</stringProp>
           <boolProp name="ignoreFirstLine">false</boolProp>
@@ -270,7 +270,7 @@ if (prev.getResponseCode() == &apos;201&apos;) {
           <stringProp name="shareMode">shareMode.all</stringProp>
         </CSVDataSet>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login (each admin)">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login (each admin)" enabled="true">
           <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -307,7 +307,7 @@ if (prev.getResponseCode() == &apos;201&apos;) {
           </ResponseAssertion>
           <hashTree/>
         </hashTree>
-        <SyncTimer guiclass="TestBeanGUI" testclass="SyncTimer" testname="Align: duplicate create">
+        <SyncTimer guiclass="TestBeanGUI" testclass="SyncTimer" testname="Align: duplicate create" enabled="true">
           <intProp name="groupSize">2</intProp>
           <longProp name="timeoutInMs">10000</longProp>
         </SyncTimer>
@@ -370,7 +370,7 @@ synchronized (props) {
           <longProp name="timeoutInMs">10000</longProp>
         </SyncTimer>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Concurrent update of the same object">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Concurrent update of the same object" enabled="true">
           <stringProp name="HTTPSampler.path">${context}/api/vehicles/${__P(target1Id)}</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">PUT</stringProp>
@@ -434,7 +434,7 @@ if (code == &apos;200&apos; || code == &apos;409&apos;) {
           <longProp name="timeoutInMs">10000</longProp>
         </SyncTimer>
         <hashTree/>
-        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Thread 1: update">
+        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Thread 1: update" enabled="true">
           <stringProp name="IfController.condition">${__jexl3(${__threadNum} == 1,)}</stringProp>
           <boolProp name="IfController.evaluateAll">false</boolProp>
           <boolProp name="IfController.useExpression">true</boolProp>
@@ -492,7 +492,7 @@ synchronized (props) {
             <hashTree/>
           </hashTree>
         </hashTree>
-        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Thread 2: delete">
+        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Thread 2: delete" enabled="true">
           <stringProp name="IfController.condition">${__jexl3(${__threadNum} == 2,)}</stringProp>
           <boolProp name="IfController.evaluateAll">false</boolProp>
           <boolProp name="IfController.useExpression">true</boolProp>
@@ -553,7 +553,7 @@ synchronized (props) {
           <boolProp name="CookieManager.controlledByThreadGroup">false</boolProp>
         </CookieManager>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login user">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login user" enabled="true">
           <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -590,7 +590,7 @@ synchronized (props) {
           </ResponseAssertion>
           <hashTree/>
         </hashTree>
-        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Generate valid CSV (3 rows)">
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Generate valid CSV (3 rows)" enabled="true">
           <stringProp name="cacheKey">true</stringProp>
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
@@ -608,7 +608,7 @@ vars.put(&apos;validImportFile&apos;, file.getAbsolutePath())
 </stringProp>
         </JSR223Sampler>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import valid CSV">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import valid CSV" enabled="true">
           <stringProp name="HTTPSampler.path">${context}/api/imports</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -659,7 +659,7 @@ props.put(&apos;validImportCount&apos;, vars.get(&apos;validImportCount&apos;))
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Generate invalid CSV (atomicity)">
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Generate invalid CSV (atomicity)" enabled="true">
           <stringProp name="cacheKey">true</stringProp>
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
@@ -676,7 +676,7 @@ vars.put(&apos;invalidImportFile&apos;, file.getAbsolutePath())
 </stringProp>
         </JSR223Sampler>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import invalid CSV (must rollback)">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import invalid CSV (must rollback)" enabled="true">
           <stringProp name="HTTPSampler.path">${context}/api/imports</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -697,7 +697,7 @@ vars.put(&apos;invalidImportFile&apos;, file.getAbsolutePath())
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Import 400">
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Import 400" enabled="true">
             <collectionProp name="Asserion.test_strings">
               <stringProp name="51508">400</stringProp>
             </collectionProp>
@@ -718,7 +718,7 @@ props.put(&apos;failedImportCode&apos;, prev.getResponseCode())
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Check atomicity: no ATOMIC objects">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Check atomicity: no ATOMIC objects" enabled="true">
           <stringProp name="HTTPSampler.path">${context}/api/vehicles?filterField=name&amp;filterValue=ATOMIC-${__P(runId)}&amp;page=1&amp;size=10</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
@@ -751,7 +751,7 @@ props.put(&apos;atomicTotal&apos;, String.valueOf(json.total))
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="User import history">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="User import history" enabled="true">
           <stringProp name="HTTPSampler.path">${context}/api/imports?page=1&amp;size=100</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
@@ -775,7 +775,7 @@ props.put(&apos;userHistoryOk&apos;, String.valueOf(body.contains(&apos;&quot;id
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login admin for history">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Login admin for history" enabled="true">
           <stringProp name="HTTPSampler.path">${context}/api/auth/login</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -802,7 +802,7 @@ props.put(&apos;userHistoryOk&apos;, String.valueOf(body.contains(&apos;&quot;id
           </HeaderManager>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Admin import history (sees all)">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Admin import history (sees all)" enabled="true">
           <stringProp name="HTTPSampler.path">${context}/api/imports?page=1&amp;size=100</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
@@ -826,7 +826,7 @@ props.put(&apos;adminHistoryOk&apos;, String.valueOf(body.contains(&apos;&quot;i
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -863,7 +863,7 @@ props.put(&apos;adminHistoryOk&apos;, String.valueOf(body.contains(&apos;&quot;i
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>
-        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report">
+        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>

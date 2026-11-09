@@ -25,6 +25,10 @@ public class CoordinatesRepository {
         return Optional.ofNullable(em.find(Coordinates.class, id));
     }
 
+    public void setSerializableIsolation() {
+        em.createNativeQuery("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE").executeUpdate();
+    }
+
     public Optional<Coordinates> findByPair(Double x, int y) {
         return em.createQuery("SELECT c FROM Coordinates c WHERE c.x = :x AND c.y = :y ORDER BY c.id",
                         Coordinates.class)

@@ -46,6 +46,7 @@ public class VehicleImportTxService {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public ImportResult importRows(List<VehicleImportRow> rows, Long operationId) {
+        vehicleRepository.setSerializableIsolation();
         Map<String, String> errors = new TreeMap<>(VehicleImportTxService::compareRowKeys);
         List<Vehicle> vehicles = new ArrayList<>();
         Map<String, Integer> namesInFile = new HashMap<>();

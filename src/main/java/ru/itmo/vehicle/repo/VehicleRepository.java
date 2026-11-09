@@ -47,6 +47,10 @@ public class VehicleRepository {
         em.flush();
     }
 
+    public void setSerializableIsolation() {
+        em.createNativeQuery("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE").executeUpdate();
+    }
+
     public Optional<Vehicle> findById(Long id) {
         return Optional.ofNullable(em.find(Vehicle.class, id));
     }

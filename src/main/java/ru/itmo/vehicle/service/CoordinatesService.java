@@ -26,6 +26,7 @@ public class CoordinatesService {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public Coordinates create(Coordinates coordinates) {
+        repository.setSerializableIsolation();
         if (coordinates.getX() == null) {
             throw new ValidationException(java.util.Map.of("x", "Поле x не может быть null"));
         }

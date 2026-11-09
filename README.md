@@ -458,6 +458,9 @@ name;coordinates.x;coordinates.y;type;enginePower;numberOfWheels;capacity;distan
 Spring передаёт уровень изоляции в EclipseLink (`EclipseLinkJpaDialect`
 устанавливает `DatabaseLogin.transactionIsolation`), поэтому аннотации
 `@Transactional(isolation = ...)` реально применяются к соединению PostgreSQL.
+Проверка уникального имени и сохранение выполняются внутри одной
+`SERIALIZABLE`-транзакции; JVM-локальные блокировки не используются, поэтому
+правило сохраняется и при работе нескольких экземпляров приложения.
 Если PostgreSQL прерывает транзакцию из-за конфликта сериализации (SQLState
 `40001`), Spring транслирует это в `ConcurrencyFailureException`, а приложение
 возвращает `409` — частичных изменений не остаётся.
